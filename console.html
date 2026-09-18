@@ -53,42 +53,129 @@ function styleEditor(x){const s={background:'',textColor:'',borderColor:'',radiu
 function preview(x){const p=x.props||{},st=boxStyle(x);switch(x.type){case'heading':return`<h3 style="${st}" class="text-2xl font-black">${esc(p.text||'Heading')}</h3>`;case'text':return`<p style="${st}" class=whitespace-pre-line>${esc(p.text||'Text')}</p>`;case'callout':case'notice':return`<div style="${st}"><b>${esc(p.title||'Notice')}</b><p>${esc(p.text||'')}</p></div>`;case'list':return`<ul style="${st}" class="list-disc pl-6">${String(p.items||'Item 1\nItem 2').split('\n').filter(Boolean).map(i=>`<li>${esc(i)}</li>`).join('')}</ul>`;case'divider':return`<hr style="${st}border-color:currentColor;margin:16px 0">`;case'image':return p.url?`<div style="${st}"><img data-preview-image src="${esc(p.url)}" alt="${esc(p.alt||'')}" style="width:${clamp(p.width,10,100,100)}%;max-height:${clamp(p.maxHeight,100,1600,1600)}px;object-fit:${['contain','cover','fill'].includes(p.fit)?p.fit:'contain'};display:block;margin:${p.align==='left'?'0 auto 0 0':p.align==='right'?'0 0 0 auto':'0 auto'}" class=max-w-full></div>`:`<div class=muted>Add an image URL</div>`;case'link':return`<a style="${st}color:${x.style?.textColor||'#22d3ee'}" class=underline>${esc(p.text||'Open page')}</a>`;case'button':return`<span style="${st}background:${x.style?.background||'#22d3ee'};color:${x.style?.textColor||'#000'}" class="inline-block px-4 py-2 font-black">${esc(p.text||'Button')}</span>`;case'video':return`<div style="${st}" class="p-6 text-center">▶ ${esc(p.title||'Video')}</div>`;case'quote':return`<blockquote style="${st}border-left:4px solid ${x.style?.borderColor||'#22d3ee'}" class=pl-4>“${esc(p.text||'Quote')}” — ${esc(p.author||'')}</blockquote>`;case'code':return`<pre style="${st}" class="p-4 overflow-auto"><code>${esc(p.text||'Code')}</code></pre>`;case'spacer':return`<div style="height:${clamp(p.height,8,240,32)}px"></div>`;case'accordion':return`<details style="${st}"><summary class=font-bold>${esc(p.title||'More information')}</summary><p>${esc(p.text||'')}</p></details>`;default:return''}}
 function themeCss(t){let bg=t.backgroundStyle==='none'?'':t.backgroundStyle==='gradient'?`background:radial-gradient(circle at 15% 0%,${t.accent}22,transparent 34%),linear-gradient(135deg,${t.background||'#000'},${t.surface||'#000'});`:`background:${t.background||'#000'};`;return`${bg}color:${t.text||'#fff'};max-width:${clamp(t.maxWidth,640,1400,1024)}px;border-radius:${clamp(t.radius,0,40,0)}px;border:${clamp(t.border,0,3,0)}px solid ${t.accent||'#22d3ee'}66;${t.shadow?'box-shadow:0 30px 90px #00000073;':''}`}
 async function builder(g,row){
-const slot=row.querySelector('[data-builder-slot]');
-const PALETTE={...CORE,...TYPES};
-let l=Array.isArray(g.page_layout)&&g.page_layout.length?clone(g.page_layout):Object.keys(CORE).map(type=>({id:crypto.randomUUID(),type,visible:true,props:{},style:{}}));
-let t={...DEFAULT,...clone(g.page_theme||{})};
-let selected=-1;
-const defaultProps=type=>({heading:{text:'Heading'},text:{text:'Start writing here...'},callout:{title:'Callout',text:'Add a message here.'},notice:{title:'Notice',text:'Add a message here.'},list:{items:'Item 1\nItem 2'},table:{caption:'Table',columns:['Column 1','Column 2'],rows:[['Value 1','Value 2']]},image:{url:'',alt:'',width:100,maxHeight:600,fit:'contain',align:'center'},link:{text:'Open page',url:'/'},button:{text:'Button',url:'/'},video:{url:'',title:'Video'},quote:{text:'Quote text',author:'Author'},code:{text:'Code'},spacer:{height:32},accordion:{title:'More information',text:'Details go here.'}}[type]||{});
-const addType=type=>{const x={id:crypto.randomUUID(),type,visible:true,props:defaultProps(type),style:{}};l.push(x);selected=l.length-1;render()};
-const customPreview=x=>preview(x);
-const builtinPreview=x=>{const p=x.props||{},st=boxStyle(x);switch(x.type){
-case'hero':return '<div style="'+st+'" class="builder-core hero-preview"><div class="muted text-xs uppercase tracking-widest">GAME HERO</div><h2 class="text-4xl font-black">'+esc(g.title||'Game title')+'</h2><p class="muted">'+esc(g.tagline||'Game tagline')+'</p></div>';
-case'image':return g.image_url?'<div style="'+st+'" class=builder-core><img src="'+esc(g.image_url)+'" alt="" style="width:100%;max-height:420px;object-fit:cover;display:block"></div>':'<div style="'+st+'" class="builder-core muted">Cover image will appear here</div>';
-case'description':return '<div style="'+st+'" class=builder-core><h3 class="font-black text-xl">Description</h3><p class=whitespace-pre-line>'+esc(g.description||'Game description will appear here.')+'</p></div>';
-case'info':return '<div style="'+st+'" class=builder-core><h3 class="font-black text-xl">Game Info</h3><div class=core-grid><span>Category</span><b>'+esc(g.category||'—')+'</b><span>Platform</span><b>'+esc(g.platform||'—')+'</b></div></div>';
-case'price':return '<div style="'+st+'" class=builder-core><h3 class="font-black text-xl">Price</h3><p class="text-2xl font-black">'+esc(g.price||'Free')+'</p></div>';
-case'tips':case'known_issues':case'secrets_cheats':case'commands_reference':case'elements_reference':return '<div style="'+st+'" class=builder-core><h3 class="font-black text-xl">'+esc(CORE[x.type])+'</h3><p class=muted>This built-in section will use its game data on the published page.</p></div>';
-case'reviews':return '<div style="'+st+'" class=builder-core><h3 class="font-black text-xl">Player Reviews</h3><div class=review-preview><span>★★★★★</span><p class=muted>Player reviews will appear here.</p></div></div>';
-default:return ''}};
-const inspector=()=>{const x=selected>=0?l[selected]:null;if(!x)return '<div class=inspector-empty><div class=inspector-icon>✦</div><b>Select an element</b><p class=muted>Drag an element onto the canvas or click one to edit it.</p></div>';return '<div class=inspector-head><div><span class=muted>EDITING</span><h4>'+esc(PALETTE[x.type]||x.type)+'</h4></div><button type=button class=action-red data-inspector-remove>Remove</button></div><div class=inspector-section><div class=inspector-title>Content</div><div class=inspector-fields>'+pEditor(x.type,x.props||{})+'</div></div><div class=inspector-section><div class=inspector-title>Appearance</div>'+styleEditor(x)+'</div>'};
-const renderPreview=()=>{const p=slot.querySelector('[data-preview]');if(!p)return;p.style.cssText=themeCss(t);p.innerHTML='<div class=canvas-hint>DRAG ELEMENTS HERE</div>'+l.filter(x=>x.visible!==false).map((x,i)=>'<div class=canvas-dropzone data-drop-before="'+i+'"></div><article class="live-element '+(selected===i?'live-selected':'')+'" draggable=true data-live-index="'+i+'"><div class=live-element-actions><span>'+esc(PALETTE[x.type]||x.type)+'</span><button type=button data-live-edit="'+i+'" class=action-cyan>Edit</button><button type=button data-live-remove="'+i+'" class=action-red>×</button></div>'+(Object.prototype.hasOwnProperty.call(TYPES,x.type)?customPreview(x):builtinPreview(x))+'</article>').join('')+'<div class="canvas-dropzone canvas-drop-end" data-drop-before="'+l.length+'"></div>';
-p.querySelectorAll('[data-live-edit]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();selected=+e.dataset.liveEdit;render()});
-p.querySelectorAll('[data-live-remove]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();l.splice(+e.dataset.liveRemove,1);selected=-1;render()});
-p.querySelectorAll('[data-live-index]').forEach(el=>{el.ondragstart=ev=>{ev.dataTransfer.setData('text/plain','element:'+el.dataset.liveIndex);el.classList.add('dragging')};el.ondragend=()=>el.classList.remove('dragging');el.onclick=()=>{selected=+el.dataset.liveIndex;render()}});
-p.querySelectorAll('[data-drop-before]').forEach(z=>{z.ondragover=ev=>{ev.preventDefault();z.classList.add('drop-active')};z.ondragleave=()=>z.classList.remove('drop-active');z.ondrop=ev=>{ev.preventDefault();z.classList.remove('drop-active');const raw=ev.dataTransfer.getData('text/plain');const at=+z.dataset.dropBefore;if(raw.startsWith('type:')){const x={id:crypto.randomUUID(),type:raw.slice(5),visible:true,props:defaultProps(raw.slice(5)),style:{}};l.splice(at,0,x);selected=at;render()}else if(raw.startsWith('element:')){let from=+raw.slice(8),to=at;if(from===to||from+1===to)return;const x=l.splice(from,1)[0];if(from<to)to--;l.splice(to,0,x);selected=to;render()}}});
-};
-const render=()=>{slot.innerHTML='<div class=builder><div class=builder-toolbar><div><span class=muted>PAGE BUILDER</span><h3 class="text-xl font-black">'+esc(g.title)+'</h3><p class="muted text-xs mt-1">Drag blocks onto the live canvas — like building a slide. No separate element-order list.</p></div><div class="flex gap-2"><button data-save class=primary>Save page</button><button data-close class=secondary>Close</button></div></div><div class=p-5><div class=builder-layout><aside class=builder-palette><div class=palette-head><span>ELEMENTS</span><small>Drag onto canvas</small></div><div class=palette-grid>'+Object.entries(PALETTE).map(([k,v])=>'<button type=button draggable=true class=palette-item data-palette-type="'+k+'"><span>＋</span>'+v+'</button>').join('')+'</div><div class=page-style-card><h4>Page style</h4><p class="muted text-xs">Transparent by default.</p><div class="grid grid-cols-2 gap-2 mt-3"><label>Accent<input data-theme=accent type=color value="'+t.accent+'" class="w-full h-9"></label><label>Text<input data-theme=text type=color value="'+t.text+'" class="w-full h-9"></label><label>Background<input data-theme=background type=color value="'+(valid(t.background)?t.background:'#000000')+'" class="w-full h-9"></label><label class=check><input data-theme=useBackground type=checkbox '+(t.backgroundStyle!=='none'?'checked':'')+'> Use background</label><label>Mode<select data-theme=backgroundStyle class=field><option value=none '+(t.backgroundStyle==='none'?'selected':'')+'>None</option><option value=solid '+(t.backgroundStyle==='solid'?'selected':'')+'>Solid</option><option value=gradient '+(t.backgroundStyle==='gradient'?'selected':'')+'>Gradient / glow</option></select></label><label>Surface<input data-theme=surface type=color value="'+(valid(t.surface)?t.surface:'#000000')+'" class="w-full h-9"></label><label>Page width <output>'+clamp(t.maxWidth,640,1400,1024)+'px</output><input data-theme=maxWidth type=range min=640 max=1400 step=20 value='+clamp(t.maxWidth,640,1400,1024)+' class=w-full></label><label>Section spacing <output>'+clamp(t.sectionGap,8,80,40)+'px</output><input data-theme=sectionGap type=range min=8 max=80 step=4 value='+clamp(t.sectionGap,8,80,40)+' class=w-full></label></div></div></aside><main><div data-preview class=preview></div><div class=live-inspector data-inspector></div></main></div></div></div>';
-const iq=slot.querySelector('[data-inspector]');if(iq)iq.innerHTML=inspector();
-slot.querySelectorAll('[data-theme]').forEach(e=>e.oninput=()=>{const k=e.dataset.theme;if(k==='useBackground')t.backgroundStyle=e.checked?'solid':'none';else t[k]=e.type==='range'?+e.value:e.value;renderPreview()});
-slot.querySelectorAll('[data-palette-type]').forEach(e=>{e.onclick=()=>addType(e.dataset.paletteType);e.ondragstart=ev=>ev.dataTransfer.setData('text/plain','type:'+e.dataset.paletteType)});
-slot.querySelectorAll('[data-inspector] [data-p]').forEach(e=>e.oninput=()=>{const x=selected>=0?l[selected]:null;if(!x)return;const k=e.dataset.p;x.props=x.props||{};x.props[k]=['width','maxHeight','height'].includes(k)?+e.value:k==='columns'?e.value.split('|').map(v=>v.trim()).filter(Boolean):k==='rows'?e.value.split('\\n').map(r=>r.split('|').map(v=>v.trim())):e.value;renderPreview()});
-slot.querySelectorAll('[data-inspector] [data-s]').forEach(e=>e.oninput=()=>{const x=selected>=0?l[selected]:null;if(!x)return;x.style=x.style||{};x.style[e.dataset.s]=e.type==='checkbox'?e.checked:e.value;renderPreview()});
-slot.querySelectorAll('[data-inspector-remove]').forEach(e=>e.onclick=()=>{if(selected<0)return;l.splice(selected,1);selected=Math.min(selected,l.length-1);render()});
-slot.querySelector('[data-close]').onclick=()=>slot.innerHTML='';
-slot.querySelector('[data-save]').onclick=async()=>{const b=slot.querySelector('[data-save]');b.disabled=true;b.textContent='Saving…';const r=await sb.from('games').update({page_theme:t,page_layout:l}).eq('id',g.id).select().single();if(r.error)alert(r.error.message);else{Object.assign(g,r.data);b.textContent='Saved ✓';setTimeout(()=>{b.disabled=false;b.textContent='Save page'},1000)}};
-renderPreview();
-};
-render();
+  const slot=row.querySelector('[data-builder-slot]');
+  const palette={...CORE,...TYPES};
+  let items=Array.isArray(g.page_layout)&&g.page_layout.length?clone(g.page_layout):[];
+  let theme={...DEFAULT,...clone(g.page_theme||{})};
+  let selected=-1;
+
+  const defaults=type=>{
+    const d={
+      heading:{text:'Heading'},text:{text:'Start writing here...'},
+      table:{caption:'Table',columns:['Column 1','Column 2'],rows:[['Value 1','Value 2']]},
+      callout:{title:'Callout',text:'Add a message here.'},notice:{title:'Notice',text:'Add a message here.'},
+      list:{items:'Item 1\nItem 2'},image:{url:'',alt:'',width:100,maxHeight:600,fit:'contain',align:'center'},
+      link:{text:'Open page',url:'/'},button:{text:'Button',url:'/'},
+      video:{url:'',title:'Video'},quote:{text:'Quote text',author:'Author'},code:{text:'Code'},
+      spacer:{height:32},accordion:{title:'More information',text:'Details go here.'}
+    };
+    return clone(d[type]||{});
+  };
+
+  const add=type=>{
+    items.push({id:crypto.randomUUID(),type,visible:true,props:defaults(type),style:{}});
+    selected=items.length-1;
+    render();
+  };
+
+  const builtin=x=>{
+    const p=x.props||{}, st=boxStyle(x);
+    if(x.type==='hero') return '<div style="'+st+'"><div class="muted text-xs uppercase tracking-widest">GAME HERO</div><h2 class="text-4xl font-black">'+esc(g.title||'Game title')+'</h2><p class="muted">'+esc(g.tagline||'Game tagline')+'</p></div>';
+    if(x.type==='image') return g.image_url?'<div style="'+st+'"><img src="'+esc(g.image_url)+'" alt="" style="width:100%;max-height:420px;object-fit:cover;display:block"></div>':'<div style="'+st+'" class="muted">Cover image</div>';
+    if(x.type==='description') return '<div style="'+st+'"><h3 class="font-black text-xl">Description</h3><p class="whitespace-pre-line">'+esc(g.description||'Game description')+'</p></div>';
+    if(x.type==='info') return '<div style="'+st+'"><h3 class="font-black text-xl">Game Info</h3><div class="core-grid"><span>Category</span><b>'+esc(g.category||'—')+'</b><span>Platform</span><b>'+esc(g.platform||'—')+'</b></div></div>';
+    if(x.type==='price') return '<div style="'+st+'"><h3 class="font-black text-xl">Price</h3><p class="text-2xl font-black">'+esc(g.price||'Free')+'</p></div>';
+    if(['tips','known_issues','secrets_cheats','commands_reference','elements_reference'].includes(x.type)) return '<div style="'+st+'"><h3 class="font-black text-xl">'+esc(CORE[x.type])+'</h3><p class="muted">This section uses the game data on the published page.</p></div>';
+    if(x.type==='reviews') return '<div style="'+st+'"><h3 class="font-black text-xl">Player Reviews</h3><div class="review-preview"><span>★★★★★</span><p class="muted">Player reviews will appear here.</p></div></div>';
+    return '';
+  };
+
+  const inspector=()=>{
+    if(selected<0||!items[selected]) return '<div class="inspector-empty"><div class="inspector-icon">✦</div><b>Select an element</b><p class="muted">Drag a block onto the canvas, then edit it here.</p></div>';
+    const x=items[selected];
+    return '<div class="inspector-head"><div><span class="muted">EDITING</span><h4>'+esc(palette[x.type]||x.type)+'</h4></div><button type="button" class="action-red" data-remove>Remove</button></div><div class="inspector-section"><div class="inspector-title">Content</div><div class="inspector-fields">'+pEditor(x.type,x.props||{})+'</div></div><div class="inspector-section"><div class="inspector-title">Appearance</div>'+styleEditor(x)+'</div>';
+  };
+
+  const renderCanvas=()=>{
+    const p=slot.querySelector('[data-preview]');
+    if(!p)return;
+    p.style.cssText=themeCss(theme);
+    let html='<div class="canvas-hint">DRAG ELEMENTS HERE</div>';
+    items.forEach((x,i)=>{
+      if(x.visible===false)return;
+      html+='<div class="canvas-dropzone" data-before="'+i+'"></div>';
+      html+='<article class="live-element '+(selected===i?'live-selected':'')+'" draggable="true" data-live="'+i+'">';
+      html+='<div class="live-element-actions"><span>'+esc(palette[x.type]||x.type)+'</span><button type="button" class="action-cyan" data-edit="'+i+'">Edit</button><button type="button" class="action-red" data-del="'+i+'">×</button></div>';
+      html+=(Object.prototype.hasOwnProperty.call(TYPES,x.type)?preview(x):builtin(x));
+      html+='</article>';
+    });
+    html+='<div class="canvas-dropzone canvas-drop-end" data-before="'+items.length+'"></div>';
+    p.innerHTML=html;
+
+    p.querySelectorAll('[data-edit]').forEach(b=>b.onclick=e=>{e.stopPropagation();selected=Number(b.dataset.edit);render()});
+    p.querySelectorAll('[data-del]').forEach(b=>b.onclick=e=>{e.stopPropagation();items.splice(Number(b.dataset.del),1);selected=-1;render()});
+    p.querySelectorAll('[data-live]').forEach(el=>{
+      el.onclick=()=>{selected=Number(el.dataset.live);render()};
+      el.ondragstart=e=>{e.dataTransfer.setData('text/plain','element:'+el.dataset.live);el.classList.add('dragging')};
+      el.ondragend=()=>el.classList.remove('dragging');
+    });
+    p.querySelectorAll('[data-before]').forEach(z=>{
+      z.ondragover=e=>{e.preventDefault();z.classList.add('drop-active')};
+      z.ondragleave=()=>z.classList.remove('drop-active');
+      z.ondrop=e=>{
+        e.preventDefault();
+        const raw=e.dataTransfer.getData('text/plain'),at=Number(z.dataset.before);
+        z.classList.remove('drop-active');
+        if(raw.startsWith('type:')){
+          const type=raw.slice(5);
+          items.splice(at,0,{id:crypto.randomUUID(),type,visible:true,props:defaults(type),style:{}});
+          selected=at;render();return;
+        }
+        if(raw.startsWith('element:')){
+          let from=Number(raw.slice(8));
+          if(from===at||from+1===at)return;
+          const x=items.splice(from,1)[0];
+          let to=at;
+          if(from<to)to--;
+          items.splice(to,0,x);selected=to;render();
+        }
+      };
+    });
+  };
+
+  const render=()=>{
+    slot.innerHTML='<div class="builder"><div class="builder-toolbar"><div><span class="muted">PAGE BUILDER</span><h3 class="text-xl font-black">'+esc(g.title)+'</h3><p class="muted text-xs mt-1">Drag blocks directly onto the live page. No element-order list.</p></div><div class="flex gap-2"><button type="button" data-save class="primary">Save page</button><button type="button" data-close class="secondary">Close</button></div></div><div class="p-5"><div class="builder-layout"><aside class="builder-palette"><div class="palette-head"><span>ELEMENTS</span><small>Drag onto canvas</small></div><div class="palette-grid">'+Object.entries(palette).map(([k,v])=>'<button type="button" draggable="true" class="palette-item" data-type="'+k+'"><span>＋</span>'+esc(v)+'</button>').join('')+'</div></aside><main><div data-preview class="preview"></div><div data-inspector class="live-inspector">'+inspector()+'</div></main></div></div></div>';
+
+    slot.querySelectorAll('[data-type]').forEach(b=>{
+      b.onclick=()=>add(b.dataset.type);
+      b.ondragstart=e=>e.dataTransfer.setData('text/plain','type:'+b.dataset.type);
+    });
+    slot.querySelectorAll('[data-p]').forEach(input=>input.oninput=()=>{
+      if(selected<0)return;
+      const x=items[selected];const k=input.dataset.p;x.props=x.props||{};
+      if(k==='width'||k==='maxHeight'||k==='height')x.props[k]=Number(input.value);
+      else if(k==='columns')x.props[k]=input.value.split('|').map(v=>v.trim()).filter(Boolean);
+      else if(k==='rows')x.props[k]=input.value.split('\\n').map(r=>r.split('|').map(v=>v.trim()));
+      else x.props[k]=input.value;
+      renderCanvas();
+    });
+    slot.querySelectorAll('[data-s]').forEach(input=>input.oninput=()=>{
+      if(selected<0)return;
+      const x=items[selected];x.style=x.style||{};
+      x.style[input.dataset.s]=input.type==='checkbox'?input.checked:(input.type==='range'?Number(input.value):input.value);
+      renderCanvas();
+    });
+    slot.querySelector('[data-remove]')?.addEventListener('click',()=>{if(selected>=0){items.splice(selected,1);selected=Math.min(selected,items.length-1);render()}});
+    slot.querySelector('[data-close]').onclick=()=>slot.innerHTML='';
+    slot.querySelector('[data-save]').onclick=async()=>{
+      const b=slot.querySelector('[data-save]');b.disabled=true;b.textContent='Saving…';
+      const r=await sb.from('games').update({page_theme:theme,page_layout:items}).eq('id',g.id).select().single();
+      if(r.error)alert(r.error.message);else{Object.assign(g,r.data);b.textContent='Saved ✓';setTimeout(()=>{b.disabled=false;b.textContent='Save page'},900)}
+    };
+    renderCanvas();
+  };
+
+  render();
 }
 async function initAdminData(){const gs=await games();
 const pages=document.querySelector('#new-pages');if(pages)pages.innerHTML=gs.map(g=>`<label class=check><input data-new-game value=${g.id} type=checkbox>${esc(g.title)}</label>`).join('');
