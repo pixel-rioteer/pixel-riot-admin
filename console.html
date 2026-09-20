@@ -103,6 +103,9 @@ const navMap={dashboard:null,reports:'section-reports',requests:'section-request
 document.querySelectorAll('#app>section').forEach(s=>s.hidden=true);
 const initialHero=document.getElementById('dashboard-hero');if(initialHero)initialHero.hidden=false;
 document.querySelectorAll('.console-nav [data-jump]').forEach(btn=>{
+  const key=btn.dataset.jump;
+  const allowed=key==='dashboard'||key==='accounts'&&me.role==='owner'||key==='reports'&&canA('manage_reports_view')||key==='requests'&&canA('manage_requests_view')||key==='add-game'&&canA('manage_games_create')||key==='games'&&(canA('manage_games_view')||canA('manage_page_builder'));
+  btn.hidden=!allowed;
   btn.onclick=()=>{
     const key=btn.dataset.jump;
     document.querySelectorAll('.console-nav [data-jump]').forEach(x=>x.classList.toggle('active',x===btn));
