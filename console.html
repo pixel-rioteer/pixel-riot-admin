@@ -83,7 +83,7 @@ ${l.map((x,i)=>`<article class="builder-element" data-card="${i}" draggable="tru
 <div class="builder-element-bar"><span class="drag" title="Drag to move">⠿</span><b>${esc(CORE[x.type]||TYPES[x.type]||x.type)}</b><span class="flex-1"></span><button data-vis="${i}" class=action-cyan title="Toggle visibility">${x.visible===false?'○':'●'}</button><button data-rem="${i}" class=action-red>Remove</button></div>
 <div data-live class="builder-live ${x.visible===false?'is-hidden':''}">${CORE[x.type]?'<div class="builder-core-preview"><span class=tag>CORE SECTION</span><b>'+esc(CORE[x.type])+'</b><p class=muted>Built-in game content</p></div>':preview(x)}</div>
 ${CORE[x.type]?'':`<details class=element-editor><summary>Edit content</summary>${pEditor(x.type,x.props||{})}</details>`}
-<details class=style-editor><summary>Style this element</summary>${styleEditor(x).replace(/^<details class=style-editor>|<\\/details>$/g,'')}</details>
+${CORE[x.type]?'':styleEditor(x)}
 </article>`).join('')||'<div class="builder-drop-empty"><div><div class="text-lg font-black">Start building</div><p class="muted text-sm">Use ＋ Add element to place your first block.</p></div></div>'}
 </div>
 <div class="mt-4 flex items-center justify-between"><span class="muted text-xs">${l.length} elements · One canvas</span><button data-add-first class=secondary>＋ Add element</button></div>
